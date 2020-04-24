@@ -34,4 +34,18 @@ Key ingredients for coroutines
 - Coroutine Context
 
 
+Examples
+- Get User
+```
+ curl http://localhost:8080/users/1
+```
 
+- Insert User
+```
+curl -X POST -H "Content-Type: application/json" -d '{"id":null,"firstName":"Jack","lastName":"Rabbit","avatarUrl":null}'  http://localhost:8080/users/
+```
+
+- Sync avatar
+```
+curl -X PATCH  http://localhost:8080/users/1/sync-avatar
+```

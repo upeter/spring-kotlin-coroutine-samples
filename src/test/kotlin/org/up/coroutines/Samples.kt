@@ -1,10 +1,23 @@
 package org.up.coroutines
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.springframework.data.annotation.Id
+import org.up.coroutines.model.User
 import java.util.*
 import kotlin.math.absoluteValue
 
+
+data class Users(
+                val firstName: String,
+                val lastName: String)
 fun main() {
 
+    val mapper = ObjectMapper()
+            mapper.registerKotlinModule()
+   println(mapper.writeValueAsString(User(null, "Jack", "Rabbit")))
+println(mapper.readValue<User>("""{"firstName":"Jack","lastName":"Rabbit"}"""))
 
     fun getItem():Int? =
             (Random().nextInt().absoluteValue % 5).run {
