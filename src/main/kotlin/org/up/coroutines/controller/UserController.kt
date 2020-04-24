@@ -30,7 +30,7 @@ open class UserController(
             userDao.save(user)
 
 
-    @PatchMapping("/users/{user-id}/sync-avatar")
+    @GetMapping("/users/{user-id}/sync-avatar")
     @ResponseBody
     open suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User? =
             userDao.findById(id)?.let {
@@ -38,37 +38,3 @@ open class UserController(
                 userDao.save(it.copy(avatarUrl = avatar.url))
             }
 }
-
-
-//@RestController
-//open class PastUserController(
-//        private val userDao: UserDao,
-//        private val avatarService: AvatarService
-//) {
-//
-//
-//    @GetMapping("/past/users/{user-id}")
-//    @ResponseBody
-//    fun getUser(@PathVariable("user-id") id: Long = 0): User? =
-//            userDao.findById(id)
-//
-//    @GetMapping("/past/users")
-//    @ResponseBody
-//    open suspend fun getUsers(): Flow<User> =
-//            userDao.findAll()
-//
-//
-//    @PostMapping("/past/users")
-//    @ResponseBody
-//    open suspend fun storeUser(@RequestBody user:User): User? =
-//            userDao.save(user)
-//
-//
-//    @PatchMapping("/past/users/{user-id}/sync-avatar")
-//    @ResponseBody
-//    open suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User? =
-//            userDao.findById(id)?.let {
-//                val avatar = avatarService.randomAvatar()
-//                userDao.save(it.copy(avatarUrl = avatar.url))
-//            }
-//}

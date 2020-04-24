@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -147,4 +149,40 @@ class ProductsHandler(
         (Random().nextInt().absoluteValue % 5).run {
             if (this != 0) this else null
         }
+}
+
+
+@Configuration
+class RouterConfiguration {
+
+    @FlowPreview
+    @Bean
+    fun productRoutes(productsHandler: ProductsHandler) = coRouter {
+        GET("/products/", productsHandler::findAll)
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse", productsHandler::allMessagesFlux)
+        }
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse2", productsHandler::allMessagesFlow)
+        }
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse/forwarding", productsHandler::forwardingEndpoint)
+        }
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse/delayed", productsHandler::delayedEndpoint)
+        }
+
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse/produce", productsHandler::produceChannel)
+        }
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse/consume", productsHandler::consumeChannel)
+        }
+
+        accept(MediaType.TEXT_EVENT_STREAM).nest {
+            GET("/products/sse/consume-dynamic", productsHandler::consumeDynamic)
+        }
+        GET("/products/{id}", productsHandler::findOne)
+        GET("/products/{id}/stock", productsHandler::findOneInStock)
+    }
 }

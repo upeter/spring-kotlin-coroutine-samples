@@ -1,6 +1,5 @@
 package org.up.coroutines
 
-import org.up.coroutines.config.RouterConfiguration
 import org.up.coroutines.handlers.ProductsHandler
 import org.up.coroutines.model.Product
 import org.up.coroutines.repository.ProductRepositoryCoroutines
@@ -24,6 +23,7 @@ import org.springframework.test.web.reactive.server.expectBodyList
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Flux
 import org.springframework.test.context.ContextConfiguration
+import org.up.coroutines.handlers.RouterConfiguration
 
 @WebFluxTest(
     excludeAutoConfiguration = [ReactiveUserDetailsServiceAutoConfiguration::class, ReactiveSecurityAutoConfiguration::class]

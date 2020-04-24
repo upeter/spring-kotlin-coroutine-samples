@@ -1,4 +1,4 @@
 select * from product;
 
-insert into users(first_name, last_name) values('Jack','Mendelson');
-insert into users(first_name, last_name) values('Jonny','Cash');
+insert into users(id, first_name, last_name) values  (default, 'Jack','Mendelson');
+insert into users(id, first_name, last_name) values (default, 'Jonny','Cash');

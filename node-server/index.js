@@ -17,7 +17,12 @@ app.get('/avatar', function (req, res) {
     var avatar = {}
     var randomId = Math.floor(Math.random() * images.length)
     avatar.url = images[randomId]
-    res.send(avatar)
+    var delay = req.query.delay
+    if (delay && isNumeric(delay)) {
+        setTimeout(function () {
+            res.send(avatar)
+        }, delay)
+    } else res.send(avatar)
 })
 
 //Define request response in root URL (/)
@@ -31,6 +36,7 @@ app.get('/*', function (req, res) {
     } else
         res.send('OK ' + req.path)
 })
+
 
 //Launch listening server on port 8081
 app.listen(8081, function () {

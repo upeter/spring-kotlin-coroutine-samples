@@ -34,7 +34,7 @@ Key ingredients for coroutines
 - Coroutine Context
 
 
-Examples
+##Examples
 - Get User
 ```
  curl http://localhost:8080/users/1
@@ -48,4 +48,23 @@ curl -X POST -H "Content-Type: application/json" -d '{"id":null,"firstName":"Jac
 - Sync avatar
 ```
 curl -X PATCH  http://localhost:8080/users/1/sync-avatar
+```
+
+
+##Perf tests
+See: https://github.com/parkghost/gohttpbench
+To build:
+```
+ go build -v -o gob github.com/parkghost/gohttpbench
+```
+- Get Performance
+```
+gob -c 100 -n 10000 -k http://localhost:8080/users/3
+
+```
+
+- Post Performance
+```
+gob -c 100 -n 10000 -k http://localhost:8080/users/3
+
 ```

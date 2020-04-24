@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.r2dbc.h2.H2ConnectionConfiguration
 import io.r2dbc.h2.H2ConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
+import kotlinx.coroutines.FlowPreview
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,15 +16,18 @@ import org.springframework.data.r2dbc.connectionfactory.init.CompositeDatabasePo
 import org.springframework.data.r2dbc.connectionfactory.init.ConnectionFactoryInitializer
 import org.springframework.data.r2dbc.connectionfactory.init.ResourceDatabasePopulator
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
+import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.server.coRouter
+import org.up.coroutines.handlers.ProductsHandler
 
 
 @Configuration
-@EnableR2dbcRepositories
 class DatastoreConfig : AbstractR2dbcConfiguration() {
     @Value("\${spring.datasource.username}")
     private val userName: String = ""
@@ -40,10 +44,10 @@ class DatastoreConfig : AbstractR2dbcConfiguration() {
         return H2ConnectionFactory(H2ConnectionConfiguration.builder()
 
                 //.inMemory(dbName)
-                .url(url)
-          .username(userName)
-          .password(password)
-          .build())
+                .url(url.removePrefix("jdbc:h2:"))
+                .username(userName)
+                .password(password)
+                .build())
     }
 
     @Bean
@@ -104,4 +108,12 @@ class WebFluxConfig : WebFluxConfigurer {
                 Jackson2JsonDecoder(objectMapper())
         )
     }
+}
+
+
+@Configuration
+class WebClientConfiguration {
+
+    @Bean
+    fun webClient() = WebClient.builder().baseUrl("http://localhost:8080").build()
 }

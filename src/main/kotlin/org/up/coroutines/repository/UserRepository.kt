@@ -16,12 +16,7 @@ import reactor.core.publisher.Mono
 
 
 @Repository
-interface UserRepository : ReactiveCrudRepository<User, Long> {
-
-//    @Query("SELECT * FROM users WHERE id = ?0")
-//    suspend fun findOne(id: Long): User? = findById(id).awaitFirstOrNull()
-
-}
+interface UserRepository : ReactiveCrudRepository<User, Long>
 
 
 @Component
@@ -34,7 +29,7 @@ open class AvatarService {
 
     open suspend fun randomAvatar(): Avatar =
             client.get()
-                    .uri("/avatar")
+                    .uri("/avatar?delay=500")
                     .retrieve()
                     .awaitBody()
 }
