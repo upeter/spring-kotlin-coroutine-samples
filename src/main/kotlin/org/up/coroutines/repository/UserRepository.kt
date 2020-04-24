@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import org.springframework.stereotype.Component
@@ -23,13 +24,13 @@ interface UserRepository : ReactiveCrudRepository<User, Long>
 class UserDao(val userRepository: UserRepository):CoroutineCrudRepository<User, Long>(userRepository) {}
 
 @Component
-open class AvatarService {
+open class AvatarService(@Value("\${delay.avatar.ms}")val  delay:Long) {
 
     private val client by lazy { WebClient.create("http://localhost:8081") }
 
     open suspend fun randomAvatar(): Avatar =
             client.get()
-                    .uri("/avatar?delay=500")
+                    .uri("/avatar?delay=$delay")
                     .retrieve()
                     .awaitBody()
 }
