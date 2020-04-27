@@ -10,11 +10,14 @@ import java.util.*
 
 
 @Table("users")
-data class User(@Id var id: Long? = null,
-                val firstName: String,
-                val lastName: String,
+data class User(@Id val id: Long? = null,
+                val userName: String,
+                val email: String,
+                val emailVerified: Boolean = false,
                 val avatarUrl: String? = null) {
 
 }
 
-data class Avatar @JsonCreator constructor(@JsonProperty("url") val url: String)
+
+data class AvatarDto @JsonCreator constructor(@JsonProperty("url") val url: String)
+

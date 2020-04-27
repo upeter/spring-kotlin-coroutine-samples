@@ -4,12 +4,16 @@ import kotlinx.coroutines.flow.Flow
 import org.springframework.web.bind.annotation.*
 import org.up.coroutines.model.User
 import org.up.coroutines.repository.AvatarService
+import org.up.coroutines.repository.EnrollmentService
 import org.up.coroutines.repository.UserDao
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 @RestController
 open class UserController(
         private val userDao: UserDao,
-        private val avatarService: AvatarService
+        private val avatarService: AvatarService,
+        private val enrollmentService: EnrollmentService
 ) {
 
 
@@ -26,8 +30,11 @@ open class UserController(
 
     @PostMapping("/users")
     @ResponseBody
-    open suspend fun storeUser(@RequestBody user:User): User? =
-            userDao.save(user)
+    open suspend fun storeUser(@RequestBody user: User): User? = coroutineScope {
+        val emailVerified = async {enrollmentService.verifyEmail(user.email) }
+        val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar().url }
+        userDao.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await()))
+    }
 
 
     @GetMapping("/users/{user-id}/sync-avatar")

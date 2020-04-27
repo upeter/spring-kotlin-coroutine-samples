@@ -10,8 +10,8 @@ import kotlin.math.absoluteValue
 
 
 data class Users(
-                val firstName: String,
-                val lastName: String)
+                val userName: String,
+                val email: String)
 fun main() {
 
     val mapper = ObjectMapper()

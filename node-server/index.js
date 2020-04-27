@@ -25,6 +25,18 @@ app.get('/avatar', function (req, res) {
     } else res.send(avatar)
 })
 
+app.get('/echo', function (req, res) {
+    var echo = req.query.value
+    var delay = req.query.delay
+    if (delay && isNumeric(delay)) {
+        setTimeout(function () {
+            res.send(echo)
+        }, delay)
+    } else
+        res.send(echo)
+})
+
+
 //Define request response in root URL (/)
 app.get('/*', function (req, res) {
     console.log(req.originalUrl)
@@ -36,6 +48,7 @@ app.get('/*', function (req, res) {
     } else
         res.send('OK ' + req.path)
 })
+
 
 
 //Launch listening server on port 8081

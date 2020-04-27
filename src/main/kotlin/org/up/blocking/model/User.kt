@@ -9,8 +9,9 @@ import javax.persistence.GenerationType
 data class UserJpa(
         @field: javax.persistence.Id @field: GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long,
-        val firstName: String,
-        val lastName: String,
+        val userName: String,
+        val email: String,
+        val emailVerified:Boolean,
         val avatarUrl: String?) {
 
 }

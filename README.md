@@ -42,7 +42,7 @@ Key ingredients for coroutines
 
 - Insert User
 ```
-curl -X POST -H "Content-Type: application/json" -d '{"id":null,"firstName":"Jack","lastName":"Rabbit","avatarUrl":null}'  http://localhost:8080/users/
+curl -X POST -H "Content-Type: application/json" -d '{"id":null,"username":"JackRabbit","email":"Jack@Rabbit.com","avatarUrl":null}'  http://localhost:8080/users/
 ```
 
 - Sync avatar
@@ -59,12 +59,16 @@ To build:
 ```
 - Get Performance
 ```
-gob -c 100 -n 10000 -k http://localhost:8080/users/3
+gob  -c 100 -n 500 -k http://localhost:8080/blocking/users/3/sync-avatar
 
 ```
 
 - Post Performance
 ```
-gob -c 100 -n 10000 -k http://localhost:8080/users/3
+ gob  -c 100 -n 500 -T "application/json" -p user.json  -k   http://localhost:8080/blocking/users/
 
 ```
+
+
+https://stackoverflow.com/questions/35628764/completablefuture-vs-spring-transactions
+

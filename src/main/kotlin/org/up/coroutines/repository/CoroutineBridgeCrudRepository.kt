@@ -5,16 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
-import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
-import org.springframework.stereotype.Component
-import org.springframework.stereotype.Repository
-import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.awaitBody
-import org.up.coroutines.model.Avatar
-import org.up.coroutines.model.User
-import reactor.core.publisher.Mono
-
 
 
 //does not work yet as to 2.3.0.RC1
