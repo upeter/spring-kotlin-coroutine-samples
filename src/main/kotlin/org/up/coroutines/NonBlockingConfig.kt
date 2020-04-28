@@ -1,12 +1,10 @@
 package org.up.coroutines.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.r2dbc.h2.H2ConnectionConfiguration
 import io.r2dbc.h2.H2ConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
-import kotlinx.coroutines.FlowPreview
+import org.reactivestreams.Subscription
+import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -15,16 +13,22 @@ import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration
 import org.springframework.data.r2dbc.connectionfactory.init.CompositeDatabasePopulator
 import org.springframework.data.r2dbc.connectionfactory.init.ConnectionFactoryInitializer
 import org.springframework.data.r2dbc.connectionfactory.init.ResourceDatabasePopulator
-import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
-import org.springframework.http.MediaType
-import org.springframework.http.codec.ServerCodecConfigurer
-import org.springframework.http.codec.json.Jackson2JsonDecoder
-import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.stereotype.Component
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.server.coRouter
-import org.up.coroutines.handlers.ProductsHandler
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.WebFilterChain
+import reactor.core.CoreSubscriber
+import reactor.core.publisher.Hooks
+import reactor.core.publisher.Mono
+import reactor.core.publisher.Operators
+import reactor.util.context.Context
+import java.util.*
+import java.util.stream.Collectors
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 
 @Configuration
@@ -61,54 +65,90 @@ class DatastoreConfig : AbstractR2dbcConfiguration() {
         return initializer
     }
 
-//
-//    @Bean
-//    fun objectMapper():ObjectMapper =
-//        ObjectMapper().apply { registerKotlinModule() }
-//
-//    @Bean
-//    fun javatimeModule(): JavaTimeModule {
-//        return  JavaTimeModule();
-//    }
-//
-//
-//    @Bean
-//    fun jackson2JsonEncoder(mapper:ObjectMapper ): Jackson2JsonEncoder {
-//        return  Jackson2JsonEncoder(mapper);
-//    }
-//
-//    @Bean
-//    fun jackson2JsonDecoder(mapper:ObjectMapper ): Jackson2JsonDecoder {
-//        return  Jackson2JsonDecoder(mapper);
-//    }
-//
-////    @Bean
-////     fun webFluxConfigurer(encoder:Jackson2JsonEncoder , decoder:Jackson2JsonDecoder ):WebFluxConfigurer {
-////        return WebFluxConfigurer() {
-////            override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
-////                configurer.defaultCodecs().jackson2JsonEncoder(encoder);
-////                configurer.defaultCodecs().jackson2JsonDecoder(decoder);
-////            }
-////        }
-////    }
-
 }
 @Configuration
 @EnableWebFlux
 class WebFluxConfig : WebFluxConfigurer {
-    @Bean
-    fun objectMapper():ObjectMapper =
-            ObjectMapper().run { registerKotlinModule() }
 
-    override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
-        configurer.defaultCodecs().jackson2JsonEncoder(
-                Jackson2JsonEncoder(objectMapper())
-        )
-        configurer.defaultCodecs().jackson2JsonDecoder(
-                Jackson2JsonDecoder(objectMapper())
-        )
+}
+
+
+@Component
+class MdcWebFilter : WebFilter {
+    override fun filter(serverWebExchange: ServerWebExchange,
+               webFilterChain: WebFilterChain): Mono<Void> {
+        val reqId = UUID.randomUUID().toString().replace("-", "").take(10)
+        MDC.put(MDC_REQUEST_ID, reqId)
+        //println("set: " + MDC.get(MDC_REQUEST_ID))
+        return webFilterChain.filter(serverWebExchange).subscriberContext{it.put(MDC_REQUEST_ID, reqId)}
+    }
+    companion object {
+        const val MDC_REQUEST_ID = "req-id"
     }
 }
+
+
+@Configuration
+class MdcContextLifterConfiguration {
+
+    companion object {
+        val MDC_CONTEXT_REACTOR_KEY: String = MdcContextLifterConfiguration::class.java.name
+    }
+
+    @PostConstruct
+    fun contextOperatorHook() {
+        Hooks.onEachOperator(MDC_CONTEXT_REACTOR_KEY, Operators.lift { _, subscriber -> MdcContextLifter(subscriber) })
+    }
+
+    @PreDestroy
+    fun cleanupHook() {
+        Hooks.resetOnEachOperator(MDC_CONTEXT_REACTOR_KEY)
+    }
+
+}
+
+/**
+ * Helper that copies the state of Reactor [Context] to MDC on the #onNext function.
+ */
+class MdcContextLifter<T>(private val coreSubscriber: CoreSubscriber<T>) : CoreSubscriber<T> {
+
+    override fun onNext(t: T) {
+        coreSubscriber.currentContext().copyToMdc()
+        coreSubscriber.onNext(t)
+    }
+
+    override fun onSubscribe(subscription: Subscription) {
+        coreSubscriber.onSubscribe(subscription)
+    }
+
+    override fun onComplete() {
+        coreSubscriber.onComplete()
+    }
+
+    override fun onError(throwable: Throwable?) {
+        coreSubscriber.onError(throwable)
+    }
+
+    override fun currentContext(): Context {
+        return coreSubscriber.currentContext()
+    }
+}
+
+/**
+ * Extension function for the Reactor [Context]. Copies the current context to the MDC, if context is empty clears the MDC.
+ * State of the MDC after calling this method should be same as Reactor [Context] state.
+ * One thread-local access only.
+ */
+private fun Context.copyToMdc() {
+    if (!this.isEmpty) {
+        val map: Map<String, String> = this.stream()
+                .collect(Collectors.toMap({ e -> e.key.toString() }, { e -> e.value.toString() }))
+        MDC.setContextMap(map)
+    } else {
+        MDC.clear()
+    }
+}
+
 
 
 @Configuration

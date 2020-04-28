@@ -42,7 +42,7 @@ class BlockingEnrollmentService(@Value("\${remote.service.delay.ms}")val  delay:
                     }
 
     companion object {
-        val logger = LoggerFactory.getLogger(BlockingAvatarService::class.java)
+        val logger = LoggerFactory.getLogger(BlockingEnrollmentService::class.java)
     }
 
 }

@@ -5,43 +5,74 @@ import org.springframework.web.bind.annotation.*
 import org.up.coroutines.model.User
 import org.up.coroutines.repository.AvatarService
 import org.up.coroutines.repository.EnrollmentService
-import org.up.coroutines.repository.UserDao
+import org.up.coroutines.repository.UserRepository
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.withContext
+import org.springframework.http.MediaType
+import kotlinx.coroutines.flow.*
+import javax.transaction.Transactional
 
 @RestController
-open class UserController(
-        private val userDao: UserDao,
+class UserController(
+        private val userRepository: UserRepository,
         private val avatarService: AvatarService,
         private val enrollmentService: EnrollmentService
 ) {
 
 
-    @GetMapping("/users/{user-id}")
-    @ResponseBody
-    open suspend fun getUser(@PathVariable("user-id") id: Long = 0): User? =
-            userDao.findById(id)
-
     @GetMapping("/users")
     @ResponseBody
-    open suspend fun getUsers(): Flow<User> =
-            userDao.findAll()
+    suspend fun getUsers(): Flow<User> =
+            userRepository.findAll()
 
+
+    @GetMapping("/users/{user-id}")
+    @ResponseBody
+    suspend fun getUser(@PathVariable("user-id") id: Long = 0): User? =
+            userRepository.findById(id)
 
     @PostMapping("/users")
     @ResponseBody
-    open suspend fun storeUser(@RequestBody user: User): User? = coroutineScope {
-        val emailVerified = async {enrollmentService.verifyEmail(user.email) }
+    @Transactional
+    suspend fun storeUser(@RequestBody user: User): User? = withContext(MDCContext()) {
+        val emailVerified = async { enrollmentService.verifyEmail(user.email) }
         val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar().url }
-        userDao.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await()))
+        userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
+            channel.send(user.email)
+        }
     }
 
 
     @GetMapping("/users/{user-id}/sync-avatar")
     @ResponseBody
-    open suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User? =
-            userDao.findById(id)?.let {
+    @Transactional
+    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User? =
+            userRepository.findById(id)?.let {
                 val avatar = avatarService.randomAvatar()
-                userDao.save(it.copy(avatarUrl = avatar.url))
+                userRepository.save(it.copy(avatarUrl = avatar.url))
             }
+
+
+    private val channel = BroadcastChannel<String>(128)
+
+
+    @GetMapping("/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ResponseBody
+    suspend fun userFlow(@RequestParam("id") id: Long = 0): Flow<User> {
+        val userFlow: Flow<User> = flow {
+            var latestId = id
+            suspend fun take() = userRepository.findUsersGreatherThan(latestId).collect { user ->
+                emit(user).also { latestId = user.id!! }
+            }
+            take()
+            channel.consumeEach { take() }
+        }
+        return userFlow
+    }
+
+
 }

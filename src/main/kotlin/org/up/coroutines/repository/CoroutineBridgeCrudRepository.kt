@@ -18,7 +18,7 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository
 //    //fun findByFirstname(firstname: String): Flow<User>
 //}
 
-abstract class CoroutineCrudRepository<T:Any, ID>(val underlying:ReactiveCrudRepository<T, ID>) {
+abstract class CoroutineCrudRepository<R:ReactiveCrudRepository<T, ID>, T:Any, ID>(val underlying:R) {
 
     suspend fun <S : T?> save(entity: S): S = underlying.save(entity).awaitFirst()
 

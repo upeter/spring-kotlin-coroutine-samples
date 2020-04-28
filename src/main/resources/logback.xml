@@ -2,7 +2,7 @@
 <configuration scan="true" scanPeriod="5 seconds">
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %X{req-id} %-5level %logger{36} - %msg%n
             </pattern>
         </encoder>
     </appender>
@@ -10,4 +10,8 @@
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
+
+    <logger name="org.up" level="INFO">
+        <appender-ref ref="STDOUT" />
+    </logger>
 </configuration>

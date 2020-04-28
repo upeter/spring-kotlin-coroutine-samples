@@ -1,10 +1,13 @@
 package org.up.coroutines.controller
 
+import org.slf4j.MDC
 import org.springframework.web.bind.annotation.*
 import org.up.blocking.model.UserJpa
 import org.up.blocking.repository.BlockingAvatarService
 import org.up.blocking.repository.BlockingEnrollmentService
 import org.up.blocking.repository.BlockingUserDao
+import org.up.coroutines.config.MdcWebFilter
+import org.up.utils.supplyAsync
 import org.up.utils.toNullable
 import java.util.concurrent.CompletableFuture
 import javax.transaction.Transactional
@@ -42,12 +45,23 @@ class BlockingUserController(
     @ResponseBody
     fun storeUserFutures(@RequestBody user: UserJpa): UserJpa {
         val avatarUrlF = CompletableFuture.supplyAsync { blockingAvatarService.randomAvatar().url }
-        val combinedF = CompletableFuture.supplyAsync {
-            blockingEnrollmentService.verifyEmail(user.email)
-        }.thenCombineAsync(avatarUrlF) { emailVerified, avatarUrl -> avatarUrl to emailVerified }
+        val combinedF = CompletableFuture.supplyAsync { blockingEnrollmentService.verifyEmail(user.email) }
+                .thenCombineAsync(avatarUrlF) { emailVerified, avatarUrl -> avatarUrl to emailVerified }
         val (avatarUrl, emailVerified) = combinedF.join()
         return blockingUserDao.save(user.copy(avatarUrl = avatarUrl, emailVerified = emailVerified))
     }
+
+    @PostMapping("/futures-mdc/users")
+    @ResponseBody
+    fun storeUserFuturesMdc(@RequestBody user: UserJpa): UserJpa {
+        println("get entry: " + MDC.get(MdcWebFilter.MDC_REQUEST_ID))
+        val avatarUrlF = supplyAsync { blockingAvatarService.randomAvatar().url }
+        val combinedF = supplyAsync { blockingEnrollmentService.verifyEmail(user.email) }
+                .thenCombineAsync(avatarUrlF) { emailVerified, avatarUrl -> avatarUrl to emailVerified }
+        val (avatarUrl, emailVerified) = combinedF.join()
+        return blockingUserDao.save(user.copy(avatarUrl = avatarUrl, emailVerified = emailVerified))
+    }
+
 
     @GetMapping("/blocking/users/{user-id}/sync-avatar")
     @ResponseBody
@@ -57,3 +71,4 @@ class BlockingUserController(
                 blockingUserDao.save(it.copy(avatarUrl = avatar.url))
             }
 }
+
