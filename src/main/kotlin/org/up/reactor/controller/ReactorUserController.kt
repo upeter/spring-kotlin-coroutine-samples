@@ -57,5 +57,68 @@ open class ReactorUserController(
                     }.flux()
 
 
+//    val emitterProcessor  = EmitterProcessor.create<String>()
+//
+//    @GetMapping(value = ["/reactor/users/stream"], produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+//    fun userFlux(): Flux<User> {
+//        reactorUserDao.findUsersGreatherThan(0)
+//        val emitterProcessor = EmitterProcessor.create<String>()
+//        val autoConnect = emitterProcessor.publish().autoConnect()
+//        val sink = emitterProcessor.sink()
+//        Flux.create(emitterProcessor.sink()).f
+//        //storing randomId and processor sink details
+//        randomIdMap.putIfAbsent(randomId, emitterProcessor)
+//        /** This will return ping status to notify client as
+//         * connection is alive until the randomId message received.  */
+//        sendPingStatus(sink, randomId)
+//    }
+//
+//
+//    @KafkaListener(topics = "some-subscription-id", containerFactory = "kafkaListenerContainerFactory")
+//    fun pushMessage(message: SomeMessage?, acknowledgment: Acknowledgment) {
+//        val emitter: EmitterProcessor<*> = randomIdMap.get("randomId")
+//        if (emitter != null) {
+//            emitter.onNext(message)
+//            emitter.onComplete()
+//            randomIdMap.remove("randomId")
+//            acknowledgment.acknowledge()
+//        }
+//    }
+//
+//    @GetMapping("/reactor/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+//    @ResponseBody
+//    fun getUserStream(): Flux<User> {
+//        Flux
+//                .interval(Duration.ofMillis(1000))
+//                .flatMap(tick -> repository.findAll())
+//        .map(image -> {
+//            Comment comment = new Comment();
+//            comment.setImageId(image.getId());
+//            comment.setComment(
+//                    "Comment #" + counter.getAndIncrement());
+//            return Mono.just(comment);
+//        })
+//        .flatMap(newComment ->
+//        Mono.defer(() ->
+//        commentController.addComment(newComment)))
+//        .subscribe();
+//        reactorUserDao.findAll()
+//    }
+
+
+//    fun <TRequest, TResponse> manyToMany(
+//            rxRequest: Flux<TRequest>?,
+//            delegate: Function<StreamObserver<TResponse>?, StreamObserver<TRequest>?>): Flux<TResponse>? {
+//        return try {
+//            val consumerStreamObserver: ReactorProducerConsumerStreamObserver<TRequest, TResponse> = ReactorProducerConsumerStreamObserver(rxRequest)
+//            delegate.apply(CancellableStreamObserver(consumerStreamObserver, consumerStreamObserver::cancel))
+//            consumerStreamObserver.rxSubscribe()
+//            (consumerStreamObserver.getRxConsumer() as Flux<TResponse>)
+//                    .transform(Operators.lift(SubscribeOnlyOnceLifter<TResponse>()))
+//        } catch (throwable: Throwable) {
+//            Flux.error(throwable)
+//        }
+//    }
+
 }
 

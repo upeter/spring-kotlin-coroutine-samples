@@ -44,17 +44,16 @@ class BlockingUserController(
     @PostMapping("/futures/users")
     @ResponseBody
     fun storeUserFutures(@RequestBody user: UserJpa): UserJpa {
-        val avatarUrlF = CompletableFuture.supplyAsync { blockingAvatarService.randomAvatar().url }
         val combinedF = CompletableFuture.supplyAsync { blockingEnrollmentService.verifyEmail(user.email) }
-                .thenCombineAsync(avatarUrlF) { emailVerified, avatarUrl -> avatarUrl to emailVerified }
-        val (avatarUrl, emailVerified) = combinedF.join()
+        val avatarUrlF = CompletableFuture.supplyAsync { blockingAvatarService.randomAvatar().url }
+                .thenCombineAsync(combinedF) { avatarUrl, emailVerified -> avatarUrl to emailVerified }
+        val (avatarUrl, emailVerified) = avatarUrlF.join()
         return blockingUserDao.save(user.copy(avatarUrl = avatarUrl, emailVerified = emailVerified))
     }
 
     @PostMapping("/futures-mdc/users")
     @ResponseBody
     fun storeUserFuturesMdc(@RequestBody user: UserJpa): UserJpa {
-        println("get entry: " + MDC.get(MdcWebFilter.MDC_REQUEST_ID))
         val avatarUrlF = supplyAsync { blockingAvatarService.randomAvatar().url }
         val combinedF = supplyAsync { blockingEnrollmentService.verifyEmail(user.email) }
                 .thenCombineAsync(avatarUrlF) { emailVerified, avatarUrl -> avatarUrl to emailVerified }
