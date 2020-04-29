@@ -62,6 +62,26 @@ class BlockingUserController(
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @GetMapping("/blocking/users/{user-id}/sync-avatar")
     @ResponseBody
     fun syncAvatar(@PathVariable("user-id") id: Long = 0): UserJpa? =

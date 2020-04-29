@@ -1,9 +1,8 @@
-package org.up.coroutines
+package org.up.coroutines.varia
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import org.springframework.data.annotation.Id
 import org.up.coroutines.model.User
 import java.util.*
 import kotlin.math.absoluteValue

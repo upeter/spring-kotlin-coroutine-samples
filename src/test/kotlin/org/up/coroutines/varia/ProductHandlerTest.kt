@@ -1,4 +1,4 @@
-package org.up.coroutines
+package org.up.coroutines.varia
 
 import org.up.coroutines.handlers.ProductsHandler
 import org.up.coroutines.model.Product

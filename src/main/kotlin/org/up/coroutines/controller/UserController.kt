@@ -14,6 +14,8 @@ import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import org.springframework.http.MediaType
 import kotlinx.coroutines.flow.*
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 import javax.transaction.Transactional
 
 @RestController
@@ -50,11 +52,11 @@ class UserController(
     @GetMapping("/users/{user-id}/sync-avatar")
     @ResponseBody
     @Transactional
-    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User? =
+    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User =
             userRepository.findById(id)?.let {
                 val avatar = avatarService.randomAvatar()
                 userRepository.save(it.copy(avatarUrl = avatar.url))
-            }
+            } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")
 
 
     private val channel = BroadcastChannel<String>(128)
@@ -62,9 +64,18 @@ class UserController(
 
     @GetMapping("/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
-    suspend fun userFlow(@RequestParam("id") id: Long = 0): Flow<User> {
+    suspend fun userFlow(@RequestParam("offset") offsetId: Long = 0): Flow<User> {
+//        val userFlow:Flow<User> = flow {
+//            var latestId = offsetId
+//            suspend fun take() = userRepository.findUsersGreatherThan(latestId).collect { user ->
+//                emit(user).also { latestId = user.id!! }
+//            }
+//            take()
+//        }
+//        return userFlow
+
         val userFlow: Flow<User> = flow {
-            var latestId = id
+            var latestId = offsetId
             suspend fun take() = userRepository.findUsersGreatherThan(latestId).collect { user ->
                 emit(user).also { latestId = user.id!! }
             }
