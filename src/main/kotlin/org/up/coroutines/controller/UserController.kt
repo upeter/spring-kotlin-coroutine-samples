@@ -9,6 +9,7 @@ import org.up.coroutines.repository.UserRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
@@ -59,8 +60,23 @@ class UserController(
             } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")
 
 
-    private val channel = BroadcastChannel<String>(128)
 
+
+    @GetMapping("/fibanocci/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    suspend fun fibanocciFlow(): Flow<Long> {
+        fun fibonacci(): Sequence<Long> = generateSequence(Pair(1L, 2L), { Pair(it.second, it.first + it.second) }).map {  it.first }
+        return flow {
+            fibonacci().forEach {next ->
+                if (next >= 0L) {
+                    delay(50)
+                    emit(next)
+                } else return@flow
+            }
+        }
+    }
+
+
+    private val channel = BroadcastChannel<String>(128)
 
     @GetMapping("/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
