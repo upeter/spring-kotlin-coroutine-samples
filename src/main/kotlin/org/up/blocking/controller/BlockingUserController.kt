@@ -44,10 +44,11 @@ class BlockingUserController(
     @PostMapping("/futures/users")
     @ResponseBody
     fun storeUserFutures(@RequestBody user: UserJpa): UserJpa {
-        val combinedF = CompletableFuture.supplyAsync { blockingEnrollmentService.verifyEmail(user.email) }
-        val avatarUrlF = CompletableFuture.supplyAsync { blockingAvatarService.randomAvatar().url }
-                .thenCombineAsync(combinedF) { avatarUrl, emailVerified -> avatarUrl to emailVerified }
-        val (avatarUrl, emailVerified) = avatarUrlF.join()
+        val emailVerifiedF = CompletableFuture.supplyAsync { blockingEnrollmentService.verifyEmail(user.email) }
+        val avatuarUrl = if (user.avatarUrl != null) CompletableFuture.completedFuture(user.avatarUrl) else
+            CompletableFuture.supplyAsync { blockingAvatarService.randomAvatar().url }
+        val combinedF = avatuarUrl.thenCombineAsync(emailVerifiedF) { avatuarUrl, emailVerified -> avatuarUrl to emailVerified }
+        val (avatarUrl, emailVerified) = combinedF.join()
         return blockingUserDao.save(user.copy(avatarUrl = avatarUrl, emailVerified = emailVerified))
     }
 
@@ -60,26 +61,6 @@ class BlockingUserController(
         val (avatarUrl, emailVerified) = combinedF.join()
         return blockingUserDao.save(user.copy(avatarUrl = avatarUrl, emailVerified = emailVerified))
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @GetMapping("/blocking/users/{user-id}/sync-avatar")

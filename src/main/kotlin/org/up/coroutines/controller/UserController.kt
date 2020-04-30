@@ -64,11 +64,11 @@ class UserController(
 
     @GetMapping("/fibanocci/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     suspend fun fibanocciFlow(): Flow<Long> {
-        fun fibonacci(): Sequence<Long> = generateSequence(Pair(1L, 2L), { Pair(it.second, it.first + it.second) }).map {  it.first }
+        fun fibonacci(): Sequence<Long> = generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map {  it.first }
         return flow {
             fibonacci().forEach {next ->
                 if (next >= 0L) {
-                    delay(50)
+                    delay(800)
                     emit(next)
                 } else return@flow
             }
@@ -81,15 +81,6 @@ class UserController(
     @GetMapping("/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
     suspend fun userFlow(@RequestParam("offset") offsetId: Long = 0): Flow<User> {
-//        val userFlow:Flow<User> = flow {
-//            var latestId = offsetId
-//            suspend fun take() = userRepository.findUsersGreatherThan(latestId).collect { user ->
-//                emit(user).also { latestId = user.id!! }
-//            }
-//            take()
-//        }
-//        return userFlow
-
         val userFlow: Flow<User> = flow {
             var latestId = offsetId
             suspend fun take() = userRepository.findUsersGreatherThan(latestId).collect { user ->
