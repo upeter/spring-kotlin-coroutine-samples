@@ -64,9 +64,9 @@ class UserController(
 
     @GetMapping("/fibanocci/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     suspend fun fibanocciFlow(): Flow<Long> {
-        fun fibonacci(): Sequence<Long> = generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map {  it.first }
+        val fibonacci: Sequence<Long> = generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map {  it.first }
         return flow {
-            fibonacci().forEach {next ->
+            fibonacci.forEach {next ->
                 if (next >= 0L) {
                     delay(800)
                     emit(next)
@@ -87,7 +87,8 @@ class UserController(
                 emit(user).also { latestId = user.id!! }
             }
             take()
-            channel.consumeEach { take() }
+            channel.consumeEach { take()
+            channel.cancel()}
         }
         return userFlow
     }
