@@ -2,6 +2,8 @@ package org.up.coroutines
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Unconfined
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import java.lang.Thread.sleep
@@ -14,6 +16,7 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.system.measureTimeMillis
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
+import kotlin.coroutines.CoroutineContext
 
 
 data class Product(val id: Int, val name: String)
@@ -112,13 +115,13 @@ suspend fun myFirstCoroutine() {
 
 suspend fun mySecondCoroutine() = coroutineScope {
     val jobs = (1..1_000_000).toList().map {
-        GlobalScope.launch {
+        launch {
             if (it % 1000 == 0) println("Created $it coroutines")
             delay(10000)
             print(".")
         }
     }
-    jobs.forEach { it.join() }
+    //jobs.forEach { it.join() }
 }
 
 
@@ -255,11 +258,75 @@ fun coRoutineSequentalExample() {
     }
 }
 
+suspend fun sendReceive(id: Int = 0,  channel:Channel<String>):Unit = coroutineScope{
+    val msg = "${this.coroutineContext[CoroutineName.Key]} send msg ${id+1}"
+    channel.send(msg)
+    println(msg)
+    delay(500)
+    val received = channel.receive()
+    println("${this.coroutineContext[CoroutineName.Key]} received=[$received]")
+    sendReceive(id + 1, channel)
+}
+
+suspend fun send(channel:Channel<String>, msg:String) = coroutineScope{
+    val msg = "${Thread.currentThread().name} $msg"
+    channel.send(msg)
+    println(msg)
+    delay(500)
+}
+
+
+suspend fun receive(channel:Channel<String>) = coroutineScope{
+    val received = channel.receive()
+    println("${Thread.currentThread().name} received=[$received]")
+}
+
+
+
+suspend fun pingPong() = coroutineScope{
+    val channel = Channel<String>()
+
+    launch {
+        suspend fun pongPing() {
+            receive(channel)
+            send(channel, "Pong")
+            pongPing()
+        }
+        pongPing()
+    }
+    val v1 = GlobalScope.launch {
+        suspend fun pingPong() {
+            send(channel, "Ping")
+            receive(channel)
+            pingPong()
+        }
+        pingPong()
+    }
+    //v1.join()
+
+
+}
+suspend fun simpleChannel() = coroutineScope{
+    val channel = Channel<String>()
+    launch {
+        println("Send: Rabbit")
+        channel.send("Rabbit")
+        delay(500)
+        println("Send: Bear")
+        channel.send("Bear")
+        channel.close()
+
+    }
+    channel.consumeEach { println("Turtle meets: ${it}") }
+}
 fun main(args: Array<String>): Unit = runBlocking(Dispatchers.Default) {
-    doIt_A()
+pingPong()
+
+
+    //doIt_A()
     //    myFirstThread()
-//    //mySecondThreads()
-//    mySecondCoroutine()
+//mySecondThreads()
+    //mySecondCoroutine()
 
     //memoryUsageCoroutines()
 //    futureExample2()

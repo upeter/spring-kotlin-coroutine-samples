@@ -1,4 +1,4 @@
-package org.up.coroutines.controller
+package org.up.blocking.controller
 
 import org.slf4j.MDC
 import org.springframework.web.bind.annotation.*

@@ -1,9 +1,11 @@
 package org.up.coroutines.repository
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.r2dbc.repository.Query
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
@@ -15,18 +17,18 @@ import reactor.core.publisher.Flux
 
 
 @Repository
-interface ReactiveUserRepository : ReactiveCrudRepository<User, Long> {
+interface UserRepository : CoroutineCrudRepository<User, Long> {
 
     @Query("select * from users e where e.id > :id")
-    fun findUsersGreatherThan(id: Long) : Flux<User>
+    fun findUsersGreatherThan(id: Long) : Flow<User>
 }
 
 
-@Component
-class UserRepository(val reactiveUserRepository: ReactiveUserRepository) : CoroutineCrudRepository<ReactiveUserRepository, User, Long>(reactiveUserRepository) {
-    suspend fun findUsersGreatherThan(id:Long) = underlying.findUsersGreatherThan(id).asFlow()
-
-}
+//@Component
+//class UserRepository(val reactiveUserRepository: ReactiveUserRepository) : CoroutineCrudRepository<User, Long> {
+//    suspend fun findUsersGreatherThan(id:Long) = findUsersGreatherThan(id).asFlow()
+//
+//}
 
 @Component
 class AvatarService(@Value("\${remote.service.delay.ms}") val delay: Long,
