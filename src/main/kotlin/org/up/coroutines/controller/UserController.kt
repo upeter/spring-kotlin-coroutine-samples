@@ -38,6 +38,12 @@ class UserController(
     suspend fun getUser(@PathVariable("user-id") id: Long = 0): User? =
             userRepository.findById(id)
 
+
+    @GetMapping("/user")
+    @ResponseBody
+    suspend fun userByName(@RequestParam("userName") userName: String): User? =
+        userRepository.findByUserName(userName)
+
     @PostMapping("/users")
     @ResponseBody
     @Transactional
@@ -83,7 +89,7 @@ class UserController(
     suspend fun userFlow(@RequestParam("offset") offsetId: Long = 0): Flow<User> {
         val userFlow: Flow<User> = flow {
             var latestId = offsetId
-            suspend fun take() = userRepository.findUsersGreatherThan(latestId).collect { user ->
+            suspend fun take() = userRepository.findById_GreaterThan(latestId).collect { user ->
                 emit(user).also { latestId = user.id!! }
             }
             take()

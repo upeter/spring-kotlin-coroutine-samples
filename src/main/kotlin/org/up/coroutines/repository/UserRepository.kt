@@ -19,8 +19,10 @@ import reactor.core.publisher.Flux
 @Repository
 interface UserRepository : CoroutineCrudRepository<User, Long> {
 
-    @Query("select * from users e where e.id > :id")
-    fun findUsersGreatherThan(id: Long) : Flow<User>
+    //@Query("select * from users e where e.id > :id")
+    fun findById_GreaterThan(id: Long) : Flow<User>
+
+    suspend fun findByUserName(userName: String) : User?
 }
 
 
