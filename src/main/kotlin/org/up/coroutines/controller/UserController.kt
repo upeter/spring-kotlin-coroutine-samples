@@ -47,9 +47,9 @@ class UserController(
     @PostMapping("/users")
     @ResponseBody
     @Transactional
-    suspend fun storeUser(@RequestBody user: User): User? = withContext(MDCContext()) {
-        val emailVerified = async { enrollmentService.verifyEmail(user.email) }
-        val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar().url }
+    suspend fun storeUser(@RequestBody user: User, @RequestParam(required = false) delay:Long? = null): User? = withContext(MDCContext()) {
+        val emailVerified = async { enrollmentService.verifyEmail(user.email, delay) }
+        val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar(delay).url }
         userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
             channel.send(user.email)
         }
@@ -59,9 +59,9 @@ class UserController(
     @GetMapping("/users/{user-id}/sync-avatar")
     @ResponseBody
     @Transactional
-    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User =
+    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0, @RequestParam(required = false) delay:Long? = null): User =
             userRepository.findById(id)?.let {
-                val avatar = avatarService.randomAvatar()
+                val avatar = avatarService.randomAvatar(delay)
                 userRepository.save(it.copy(avatarUrl = avatar.url))
             } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")
 

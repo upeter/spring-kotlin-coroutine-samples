@@ -14,13 +14,13 @@ import org.up.coroutines.model.AvatarDto
 interface BlockingUserDao : JpaRepository<UserJpa, Long>
 
 @Component
-class BlockingAvatarService(@Value("\${remote.service.delay.ms}")val  delay:Long,
+class BlockingAvatarService(@Value("\${remote.service.delay.ms}")val  delayCfg:Long,
                                  @Value("\${remote.service.url}")val baseUrl:String) {
 
     val restTemplate = RestTemplate()
 
-    fun randomAvatar(): AvatarDto =
-            restTemplate.getForEntity("$baseUrl/avatar?delay=$delay", AvatarDto::class.java).body!!.also {
+    fun randomAvatar(delay: Long? = null): AvatarDto =
+            restTemplate.getForEntity("$baseUrl/avatar?delay=${delay ?: delayCfg}", AvatarDto::class.java).body!!.also {
                 logger.debug("fetch random avatar...")
             }
 
@@ -31,13 +31,13 @@ class BlockingAvatarService(@Value("\${remote.service.delay.ms}")val  delay:Long
 }
 
 @Component
-class BlockingEnrollmentService(@Value("\${remote.service.delay.ms}")val  delay:Long,
-                                     @Value("\${remote.service.url}")val baseUrl:String) {
+class BlockingEnrollmentService(@Value("\${remote.service.delay.ms}")val  delayCfg:Long,
+                                @Value("\${remote.service.url}")val baseUrl:String) {
 
     val restTemplate = RestTemplate()
 
-    fun verifyEmail(email:String): Boolean =
-            restTemplate.getForEntity("$baseUrl/echo?email=$email&value=true&delay=$delay", String::class.java).body!! == "true".also {
+    fun verifyEmail(email:String, delay: Long? = null): Boolean =
+            restTemplate.getForEntity("$baseUrl/echo?email=$email&value=true&delay=${delay ?: delayCfg}", String::class.java).body!! == "true".also {
                         logger.debug("verify email $email...")
                     }
 

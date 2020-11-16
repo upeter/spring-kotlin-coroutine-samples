@@ -33,14 +33,14 @@ interface UserRepository : CoroutineCrudRepository<User, Long> {
 //}
 
 @Component
-class AvatarService(@Value("\${remote.service.delay.ms}") val delay: Long,
+class AvatarService(@Value("\${remote.service.delay.ms}") val delayCfg: Long,
                     @Value("\${remote.service.url}") val baseUrl: String) {
 
     private val client by lazy { WebClient.create(baseUrl) }
 
-    suspend fun randomAvatar(): AvatarDto =
+    suspend fun randomAvatar(delay:Long? = null): AvatarDto =
             client.get()
-                    .uri("/avatar?delay=$delay")
+                    .uri("/avatar?delay=${delay ?: delayCfg}")
                     .retrieve()
                     .awaitBody<AvatarDto>().also {
                         logger.debug("fetch random avatar...")
@@ -53,14 +53,14 @@ class AvatarService(@Value("\${remote.service.delay.ms}") val delay: Long,
 }
 
 @Component
-class EnrollmentService(@Value("\${remote.service.delay.ms}") val delay: Long,
+class EnrollmentService(@Value("\${remote.service.delay.ms}") val delayCfg: Long,
                         @Value("\${remote.service.url}") val baseUrl: String) {
 
     private val client by lazy { WebClient.create(baseUrl) }
 
-    suspend fun verifyEmail(email: String): Boolean =
+    suspend fun verifyEmail(email: String, delay:Long? = null): Boolean =
             client.get()
-                    .uri("/echo?email=$email&value=true&delay=$delay")
+                    .uri("/echo?email=$email&value=true&delay=${delay ?: delayCfg}")
                     .retrieve()
                     .awaitBody<String>()
                     .toBoolean().also {

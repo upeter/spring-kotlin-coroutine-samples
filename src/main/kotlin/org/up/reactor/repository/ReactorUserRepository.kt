@@ -19,20 +19,20 @@ import reactor.core.publisher.Mono
 @Repository
 interface ReactorUserRepository : ReactiveCrudRepository<User, Long> {
     @Query("select * from users e where e.id > :id")
-    fun findUsersGreatherThan(id: Long) : Flux<User>
+    fun findUsersGreatherThan(id: Long): Flux<User>
 
 }
 
 
 @Component
-class ReactorAvatarService(@Value("\${remote.service.delay.ms}") val delay: Long,
+class ReactorAvatarService(@Value("\${remote.service.delay.ms}") val delayCfg: Long,
                            @Value("\${remote.service.url}") val baseUrl: String) {
 
     private val client by lazy { WebClient.create(baseUrl) }
 
-    fun randomAvatar(): Mono<AvatarDto> =
+    fun randomAvatar(delay: Long? = null): Mono<AvatarDto> =
             client.get()
-                    .uri("/avatar?delay=$delay")
+                    .uri("/avatar?delay=${delay ?: delayCfg}")
                     .retrieve()
                     .bodyToMono(AvatarDto::class.java).also {
                         logger.debug("fetch random avatar...")
@@ -45,14 +45,14 @@ class ReactorAvatarService(@Value("\${remote.service.delay.ms}") val delay: Long
 }
 
 @Component
-class ReactorEnrollmentService(@Value("\${remote.service.delay.ms}") val delay: Long,
+class ReactorEnrollmentService(@Value("\${remote.service.delay.ms}") val delayCfg: Long,
                                @Value("\${remote.service.url}") val baseUrl: String) {
 
     private val client by lazy { WebClient.create(baseUrl) }
 
-    fun verifyEmail(email: String): Mono<Boolean> =
+    fun verifyEmail(email: String, delay: Long? = null): Mono<Boolean> =
             client.get()
-                    .uri("/echo?email=$email&value=true&delay=$delay")
+                    .uri("/echo?email=$email&value=true&delay=${delay ?: delayCfg}")
                     .retrieve()
                     .bodyToMono(String::class.java)
                     .map { it.toBoolean() }

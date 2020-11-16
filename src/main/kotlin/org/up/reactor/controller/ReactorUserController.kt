@@ -38,9 +38,9 @@ open class ReactorUserController(
     @PostMapping("/reactor/users")
     @ResponseBody
     @Transactional
-    fun storeUser(@RequestBody user: User): Mono<User> {
-        val avatarM = reactorAvatarService.randomAvatar()//.subscribeOn(Schedulers.elastic())
-        val verifyEmailM = reactorEnrollmentService.verifyEmail(user.email)//.subscribeOn(Schedulers.elastic())
+    fun storeUser(@RequestBody user: User, @RequestParam(required = false) delay:Long? = null): Mono<User> {
+        val avatarM = reactorAvatarService.randomAvatar(delay)//.subscribeOn(Schedulers.elastic())
+        val verifyEmailM = reactorEnrollmentService.verifyEmail(user.email, delay)//.subscribeOn(Schedulers.elastic())
         return Mono.zip(avatarM, verifyEmailM).flatMap { (avatar, emailVerified) ->
             reactorUserDao.save(user.copy(avatarUrl = avatar.url, emailVerified = emailVerified))
         }
@@ -49,10 +49,10 @@ open class ReactorUserController(
     @GetMapping("/reactor/{user-id}/sync-avatar")
     @ResponseBody
     @Transactional
-    fun syncAvatar(@PathVariable("user-id") id: Long): Flux<User> {
+    fun syncAvatar(@PathVariable("user-id") id: Long, @RequestParam(required = false) delay:Long? = null): Flux<User> {
         return reactorUserDao.findById(id)
                 .flatMap { user ->
-                    reactorAvatarService.randomAvatar()
+                    reactorAvatarService.randomAvatar(delay)
                             .flatMap { avatar ->
                                 reactorUserDao.save(user.copy(avatarUrl = avatar.url))
                             }
