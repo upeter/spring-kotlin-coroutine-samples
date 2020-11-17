@@ -2,8 +2,7 @@ package org.up.coroutines
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Unconfined
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import java.lang.Thread.sleep
@@ -319,8 +318,43 @@ suspend fun simpleChannel() = coroutineScope{
     }
     channel.consumeEach { println("Turtle meets: ${it}") }
 }
+
+suspend fun receiveAll() =  coroutineScope{
+    val channel = Channel<String>()
+    launch {
+        channel.send("Rabbit")
+        delay(500)
+        channel.send("Bear")
+        delay(500)
+        channel.close()
+    }
+    channel.consumeEach { println("Turtle meets: ${it}") }
+//    repeat (2) {
+//        println("Turtle meets: ${channel.receive()}")
+//    }
+}
+
+suspend fun broadcast() =  coroutineScope{
+    val channel = BroadcastChannel<String>(Channel.CONFLATED)
+    launch {
+        channel.send("Rabbit")
+        delay(500)
+        channel.close()
+    }
+    launch {
+        channel.openSubscription().consumeEach { println("Turtle 1 meets: ${it}") }
+    }
+    launch {
+        channel.openSubscription().consumeEach { println("Turtle 2 meets: ${it}") }
+    }
+    val args = arrayOf("")
+    GlobalScope.produce { args.forEach{send(it)} }
+}
+
+
 fun main(args: Array<String>): Unit = runBlocking(Dispatchers.Default) {
-pingPong()
+    broadcast()
+    //pingPong()
 
 
     //doIt_A()
