@@ -22,15 +22,11 @@ interface UserRepository : CoroutineCrudRepository<User, Long> {
     //@Query("select * from users e where e.id > :id")
     fun findById_GreaterThan(id: Long) : Flow<User>
 
+    fun findById_GreaterThanAndEmailVerified(id: Long, verified: Boolean) : Flow<User>
+
     suspend fun findByUserName(userName: String) : User?
 }
 
-
-//@Component
-//class UserRepository(val reactiveUserRepository: ReactiveUserRepository) : CoroutineCrudRepository<User, Long> {
-//    suspend fun findUsersGreatherThan(id:Long) = findUsersGreatherThan(id).asFlow()
-//
-//}
 
 @Component
 class AvatarService(@Value("\${remote.service.delay.ms}") val delayCfg: Long,
@@ -58,9 +54,9 @@ class EnrollmentService(@Value("\${remote.service.delay.ms}") val delayCfg: Long
 
     private val client by lazy { WebClient.create(baseUrl) }
 
-    suspend fun verifyEmail(email: String, delay:Long? = null): Boolean =
+    suspend fun verifyEmail(email: String, delay:Long? = null, verified:Boolean = true): Boolean =
             client.get()
-                    .uri("/echo?email=$email&value=true&delay=${delay ?: delayCfg}")
+                    .uri("/echo?email=$email&value=$verified&delay=${delay ?: delayCfg}")
                     .retrieve()
                     .awaitBody<String>()
                     .toBoolean().also {

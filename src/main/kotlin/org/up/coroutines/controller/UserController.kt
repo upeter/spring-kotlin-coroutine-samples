@@ -8,6 +8,7 @@ import org.up.coroutines.repository.EnrollmentService
 import org.up.coroutines.repository.UserRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
@@ -15,8 +16,10 @@ import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import org.springframework.http.MediaType
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.http.codec.ServerSentEvent
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.web.server.ResponseStatusException
 import javax.transaction.Transactional
 
@@ -45,17 +48,6 @@ class UserController(
     suspend fun userByName(@RequestParam("userName") userName: String): User? =
         userRepository.findByUserName(userName)
 
-    @PostMapping("/users")
-    @ResponseBody
-    @Transactional
-    suspend fun storeUser(@RequestBody user: User, @RequestParam(required = false) delay:Long? = null): User? = withContext(MDCContext()) {
-        val emailVerified = async { enrollmentService.verifyEmail(user.email, delay) }
-        val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar(delay).url }
-        userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
-            channel.send(user.email)
-        }
-    }
-
 
     @GetMapping("/users/{user-id}/sync-avatar")
     @ResponseBody
@@ -68,49 +60,61 @@ class UserController(
 
 
 
+    private val channel = BroadcastChannel<User>(Channel.CONFLATED)
 
-    @GetMapping("/fibanocci/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    fun fibanocciFlow(): Flow<Long> {
-        val fibonacci: Sequence<Long> = generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map {  it.first }
-        return flow {
-            fibonacci.forEach {next ->
-                if (next >= 0L) {
-                    delay(800)
-                    emit(next)
-                } else return@flow
-            }
+
+    @PostMapping("/users")
+    @ResponseBody
+    @Transactional
+    suspend fun storeUser(@RequestBody user: User, @RequestParam(required = false) delay:Long? = null): User? = withContext(MDCContext()) {
+        val emailVerified = async { enrollmentService.verifyEmail(user.email,  delay, user.emailVerified) }
+        val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar(delay).url }
+        userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
+            channel.send(it)
         }
     }
 
 
-    @GetMapping("/infinite", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    fun infiniteFlow(): Flow<String>  = flow {
-        generateSequence(0){it + 1}.forEach {
-            emit(it.toString() + " \n")
+    @GetMapping("/users/stream1", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ResponseBody
+    suspend fun userFlow1(@RequestParam("offset") offsetId: Long = 0): Flow<User> = flow {
+        var latestId = offsetId
+        suspend fun take() = userRepository.findById_GreaterThan(latestId).collect { user ->
+            emit(user).also { latestId = user.id!! }
+        }
+        while (true) {
+            delay(1000)
+            take()
         }
     }
 
-    @GetMapping("/infinite/sse", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    fun sseFlow(): Flow<ServerSentEvent<String>>  = flow {
-        generateSequence(0){it + 1}.map{it.toString()}.forEach {
-            emit(ServerSentEvent.builder<String>().id(it).data(it).build())
-            delay(it.toLong() % 1000)
+    @GetMapping("/users/stream2", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ResponseBody
+    suspend fun userFlow2(@RequestParam("offset") offsetId: Long = 0): Flow<User> = flow {
+        var latestId = offsetId
+        suspend fun take() = userRepository.findById_GreaterThan(latestId).collect { user ->
+            emit(user).also { latestId = user.id!! }
         }
+        channel.openSubscription().consumeAsFlow().collect {
+            take()
+        }
+        take()
     }
 
-    private val channel = BroadcastChannel<String>(128)
 
     @GetMapping("/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
-    suspend fun userFlow(@RequestParam("offset") offsetId: Long = 0): Flow<User> {
+    suspend fun userFlow(@RequestParam("offset") offsetId: Long? = 0, @RequestParam("verified") filterVerified:Boolean? = null): Flow<User> {
         val userFlow: Flow<User> = flow {
-            var latestId = offsetId
-            suspend fun take() = userRepository.findById_GreaterThan(latestId).collect { user ->
+            var latestId = offsetId ?: 0
+            suspend fun take() = (if(filterVerified == true) userRepository.findById_GreaterThanAndEmailVerified(latestId, filterVerified) else userRepository.findById_GreaterThan(latestId)).collect { user ->
                 emit(user).also { latestId = user.id!! }
             }
             take()
-            channel.consumeEach { take()
-            channel.cancel()}
+            channel.openSubscription().consumeAsFlow().run {
+                if(filterVerified == true) this.filter { it.emailVerified } else this }.collect {
+                take()
+            }
         }
         return userFlow
     }

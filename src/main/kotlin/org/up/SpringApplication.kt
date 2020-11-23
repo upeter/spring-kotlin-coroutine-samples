@@ -5,8 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
+import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
+@EnableScheduling
 @EnableR2dbcRepositories(value = arrayOf("org.up.coroutines", "org.up.reactor"))
 @EnableJpaRepositories("org.up.blocking")
 class SpringApplication
