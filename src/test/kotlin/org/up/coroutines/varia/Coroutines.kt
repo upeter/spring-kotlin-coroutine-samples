@@ -3,6 +3,7 @@ package org.up.coroutines
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Unconfined
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import java.lang.Thread.sleep
@@ -352,8 +353,25 @@ suspend fun broadcast() =  coroutineScope{
 }
 
 
+fun simpleFlow() = flow{
+        emit("~ Go with ")
+        delay(1000L)
+        emit("the Flow ~")
+    }.onEach { println("On each $it") }
+        .onStart { println("Starting flow") }
+        .onCompletion { println("Flow completed") }
+        .catch { ex -> println("Exception message: ${ex.message}") }
+
+
+
 fun main(args: Array<String>): Unit = runBlocking(Dispatchers.Default) {
-    broadcast()
+    (1..10).forEach{println(it)}
+    simpleFlow().collect{
+        print(it)
+    }
+
+
+    //broadcast()
     //pingPong()
 
 

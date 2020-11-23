@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import org.springframework.http.MediaType
 import kotlinx.coroutines.flow.*
 import org.springframework.http.HttpStatus
+import org.springframework.http.codec.ServerSentEvent
 import org.springframework.web.server.ResponseStatusException
 import javax.transaction.Transactional
 
@@ -69,7 +70,7 @@ class UserController(
 
 
     @GetMapping("/fibanocci/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    suspend fun fibanocciFlow(): Flow<Long> {
+    fun fibanocciFlow(): Flow<Long> {
         val fibonacci: Sequence<Long> = generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map {  it.first }
         return flow {
             fibonacci.forEach {next ->
@@ -81,6 +82,21 @@ class UserController(
         }
     }
 
+
+    @GetMapping("/infinite", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun infiniteFlow(): Flow<String>  = flow {
+        generateSequence(0){it + 1}.forEach {
+            emit(it.toString() + " \n")
+        }
+    }
+
+    @GetMapping("/infinite/sse", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun sseFlow(): Flow<ServerSentEvent<String>>  = flow {
+        generateSequence(0){it + 1}.map{it.toString()}.forEach {
+            emit(ServerSentEvent.builder<String>().id(it).data(it).build())
+            delay(it.toLong() % 1000)
+        }
+    }
 
     private val channel = BroadcastChannel<String>(128)
 
