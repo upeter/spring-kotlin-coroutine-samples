@@ -89,6 +89,10 @@ class UserController(
         }
     }
 
+    @GetMapping("/users/stream0", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ResponseBody
+    suspend fun userFlow0(): Flow<User> = userRepository.findAll()
+
 
     @GetMapping("/users/stream1", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
@@ -110,10 +114,10 @@ class UserController(
         suspend fun take() = userRepository.findById_GreaterThan(latestId).collect { user ->
             emit(user).also { latestId = user.id!! }
         }
+        take()
         channel.openSubscription().consumeAsFlow().collect {
             take()
         }
-        take()
     }
 
 
