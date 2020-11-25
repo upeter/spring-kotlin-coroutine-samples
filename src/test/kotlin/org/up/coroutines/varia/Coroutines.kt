@@ -6,6 +6,13 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.reactive.ContextInjector
+import kotlinx.coroutines.reactive.awaitFirst
+import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.lang.Thread.sleep
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -132,6 +139,30 @@ suspend fun <T> CompletableFuture<T>.await2(): T = suspendCoroutine { cont ->
             else -> cont.resume(value)
         }
     }
+}
+
+
+suspend fun <T> Mono<T>.await(): T = suspendCoroutine { cont ->
+    subscribe(object : Subscriber<T> {
+        private var value: T? = null
+        override fun onNext(t: T) {
+            value = t
+        }
+
+        override fun onError(e: Throwable) {
+            cont.resumeWithException(e)
+        }
+
+        override fun onComplete() {
+            cont.resume(value as T)
+        }
+
+        override fun onSubscribe(sub: Subscription) {
+            sub.request(1)
+
+        }
+    })
+
 }
 
 
@@ -410,7 +441,7 @@ val servicesBankABC = listOf(serviceBankA, serviceBankB, serviceBankC)
 
 suspend fun doIt_A() = coroutineScope {
     val ctx = newSingleThreadContext("single-threaded-context")
-    val executorService =  ctx.executor as ExecutorService
+    val executorService = ctx.executor as ExecutorService
 
     //Threads
     println("multiple threads threaded")
@@ -453,7 +484,6 @@ suspend fun doIt_A() = coroutineScope {
 }
 
 
-
 suspend fun doIt(): Unit {
     coroutineScope {
         //        launch(Dispatchers.Default) {
@@ -469,3 +499,30 @@ suspend fun doIt(): Unit {
 //        }
     }
 }
+
+
+//@InternalCoroutinesApi
+//fun main(args: Array<String>): Unit {
+//    runBlocking {
+//        val result = Mono.just("Hi").await()
+//        println(result)
+//        try {
+//            Mono.error<Any>(java.lang.IllegalArgumentException("oeps")).await()
+//        } catch (ex: Exception) {
+//            println(ex.message)
+//        }
+//
+//
+//        //    myFirstThread()
+////    //mySecondThreads()
+////    mySecondCoroutine()
+//
+//        //memoryUsageCoroutines()
+////    futureExample2()
+////    coRoutineSequentalExample()
+////    futureExampleTemperature()
+////    coRoutineExampleTemperatureException()
+//        //coRoutineExampleTemperature()
+//
+//    }
+//}

@@ -59,6 +59,21 @@ class UserController(
             } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")
 
 
+    @GetMapping("/infinite", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun infiniteFlow(): Flow<String>  = flow {
+        generateSequence(0){it + 1}.forEach {
+            emit(it.toString() + " \n")
+        }
+    }
+
+    @GetMapping("/infinite/sse", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun sseFlow(): Flow<ServerSentEvent<String>>  = flow {
+        generateSequence(0){it + 1}.map{it.toString()}.forEach {
+            emit(ServerSentEvent.builder<String>().id(it).data(it).build())
+            delay(it.toLong() % 1000)
+        }
+    }
+
 
     private val channel = BroadcastChannel<User>(Channel.CONFLATED)
 

@@ -35,6 +35,43 @@ open class ReactorUserController(
         return reactorUserDao.findById(id)
     }
 
+
+    @PostMapping("/reactor/users-1")
+    @ResponseBody
+    @Transactional
+    fun storeUser1(@RequestBody user: User): Mono<User> {
+        val avatarUrlMono =
+                if(user.avatarUrl != null) Mono.just(user.avatarUrl)
+                else reactorAvatarService.randomAvatar().map{it.url}
+        return avatarUrlMono.flatMap { avatarUrl -> reactorUserDao.save(user.copy(avatarUrl = avatarUrl)) }
+    }
+
+    @PostMapping("/reactor/users-2")
+    @ResponseBody
+    @Transactional
+    fun storeUser2(@RequestBody user: User): Mono<User> {
+        return reactorEnrollmentService.verifyEmail(user.email).flatMap {validatedEmail ->
+            if(!validatedEmail) Mono.error(IllegalAccessException("${user.email} is invalid")) else {
+                (if (user.avatarUrl != null) Mono.just(user.avatarUrl)
+                else reactorAvatarService.randomAvatar().map { it.url }).flatMap { avatarUrl ->
+                    reactorUserDao.save(user.copy(avatarUrl = avatarUrl)) }
+            }
+        }
+    }
+    //.subscribeOn(Schedulers.elastic())
+    @PostMapping("/reactor/users-3")
+    @ResponseBody
+    @Transactional
+    fun storeUser3(@RequestBody user: User): Mono<User> {
+        val avatarM = reactorAvatarService.randomAvatar()
+        val verifyEmailM = reactorEnrollmentService.verifyEmail(user.email)
+        return Mono.zip(avatarM, verifyEmailM).flatMap { (avatar, emailVerified) ->
+            reactorUserDao.save(user.copy(avatarUrl = avatar.url, emailVerified = emailVerified))
+        }
+    }
+
+
+
     @PostMapping("/reactor/users")
     @ResponseBody
     @Transactional
