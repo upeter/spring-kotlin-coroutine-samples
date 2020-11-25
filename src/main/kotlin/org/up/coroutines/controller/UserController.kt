@@ -59,7 +59,7 @@ class UserController(
             } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")
 
 
-    @GetMapping("/infinite", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @GetMapping("/infinite")
     fun infiniteFlow(): Flow<String>  = flow {
         generateSequence(0){it + 1}.forEach {
             emit(it.toString() + " \n")
