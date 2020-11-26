@@ -68,8 +68,8 @@ class UserController(
 
     @GetMapping("/infinite/sse", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun sseFlow(): Flow<ServerSentEvent<String>>  = flow {
-        generateSequence(0){it + 1}.map{it.toString()}.forEach {
-            emit(ServerSentEvent.builder<String>().event("hello-sse-event").id(it).data("Your lucky number is $it").build())
+        generateSequence(0){it + 1}.forEach {
+            emit(ServerSentEvent.builder<String>().event("hello-sse-event").id(it.toString()).data("Your lucky number is $it").build())
             delay(500L)
         }
     }
@@ -99,7 +99,7 @@ class UserController(
     fun singlePoller() = runBlocking{
         userRepository.findById_GreaterThan(lastId.get()).toList().partition { it.emailVerified }.also {(verified, notVerified) ->
             channel.send(UserAddedNotification(verified = verified.size, nonVerified = notVerified.size))
-            lastId.set((verified + notVerified).map { it.id ?: 0 }.max()!!)
+            lastId.set((verified + notVerified).map { it.id ?: 0 }.max() ?: 0)
         }
     }
 
