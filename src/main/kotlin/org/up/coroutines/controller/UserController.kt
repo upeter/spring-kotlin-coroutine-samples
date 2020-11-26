@@ -9,7 +9,6 @@ import org.up.coroutines.repository.UserRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.slf4j.MDCContext
@@ -21,6 +20,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.web.server.ResponseStatusException
+import java.util.concurrent.atomic.AtomicLong
 import javax.transaction.Transactional
 
 @RestController
@@ -69,13 +69,13 @@ class UserController(
     @GetMapping("/infinite/sse", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun sseFlow(): Flow<ServerSentEvent<String>>  = flow {
         generateSequence(0){it + 1}.map{it.toString()}.forEach {
-            emit(ServerSentEvent.builder<String>().id(it).data(it).build())
-            delay(it.toLong() % 1000)
+            emit(ServerSentEvent.builder<String>().event("hello-sse-event").id(it).data("Your lucky number is $it").build())
+            delay(500L)
         }
     }
 
 
-    private val channel = BroadcastChannel<User>(Channel.CONFLATED)
+    private val channel = BroadcastChannel<UserAddedNotification>(Channel.CONFLATED)
 
 
     @PostMapping("/users")
@@ -84,10 +84,26 @@ class UserController(
     suspend fun storeUser(@RequestBody user: User, @RequestParam(required = false) delay:Long? = null): User? = withContext(MDCContext()) {
         val emailVerified = async { enrollmentService.verifyEmail(user.email,  delay, user.emailVerified) }
         val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar(delay).url }
-        userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
-            channel.send(it)
+        userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await()))
+    //        .also {
+//            channel.send(it)
+//        }
+    }
+
+    data class UserAddedNotification(val verified:Int = 0, val nonVerified:Int = 0) {
+        fun has(filterVerified:Boolean) = (if(filterVerified) verified else nonVerified) > 0
+    }
+
+    val lastId = AtomicLong(0)
+    @Scheduled(fixedRate = 1000)
+    fun singlePoller() = runBlocking{
+        userRepository.findById_GreaterThan(lastId.get()).toList().partition { it.emailVerified }.also {(verified, notVerified) ->
+            channel.send(UserAddedNotification(verified = verified.size, nonVerified = notVerified.size))
+            lastId.set((verified + notVerified).map { it.id ?: 0 }.max()!!)
         }
     }
+
+
 
     @GetMapping("/users/stream0", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
@@ -123,19 +139,15 @@ class UserController(
 
     @GetMapping("/users/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @ResponseBody
-    suspend fun userFlow(@RequestParam("offset") offsetId: Long? = 0, @RequestParam("verified") filterVerified:Boolean? = null): Flow<User> {
-        val userFlow: Flow<User> = flow {
-            var latestId = offsetId ?: 0
-            suspend fun take() = (if(filterVerified == true) userRepository.findById_GreaterThanAndEmailVerified(latestId, filterVerified) else userRepository.findById_GreaterThan(latestId)).collect { user ->
-                emit(user).also { latestId = user.id!! }
-            }
-            take()
-            channel.openSubscription().consumeAsFlow().run {
-                if(filterVerified == true) this.filter { it.emailVerified } else this }.collect {
-                take()
-            }
+    suspend fun userFlow(@RequestParam("offset") offsetId: Long? = 0, @RequestParam("verified") filterVerified: Boolean = true): Flow<User> = flow {
+        var lastId = offsetId ?: 0
+        suspend fun take() = userRepository.findById_GreaterThanAndEmailVerified(lastId, filterVerified).collect { user ->
+            emit(user).also { lastId = user.id!! }
         }
-        return userFlow
+        take()
+        channel.openSubscription().consumeAsFlow().filter { it.has(filterVerified) }.collect {
+            take()
+        }
     }
 
 
