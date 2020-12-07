@@ -1,7 +1,6 @@
 package org.up.reactor.controller
 
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import org.up.coroutines.model.User
@@ -10,10 +9,8 @@ import org.up.reactor.repository.ReactorEnrollmentService
 import org.up.reactor.repository.ReactorUserRepository
 import org.up.utils.component1
 import org.up.utils.component2
-import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import javax.transaction.Transactional
 
 

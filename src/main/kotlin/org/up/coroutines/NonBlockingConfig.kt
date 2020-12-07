@@ -2,6 +2,8 @@ package org.up.coroutines.config
 
 import io.r2dbc.h2.H2ConnectionConfiguration
 import io.r2dbc.h2.H2ConnectionFactory
+import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
+import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
 import org.reactivestreams.Subscription
 import org.slf4j.MDC
@@ -45,13 +47,23 @@ class DatastoreConfig : AbstractR2dbcConfiguration() {
     @Bean
     override fun connectionFactory(): ConnectionFactory {
         println("init connectionFactory")
-        return H2ConnectionFactory(H2ConnectionConfiguration.builder()
+        return if(url.contains("h2")) {
+             H2ConnectionFactory(H2ConnectionConfiguration.builder()
+                    //.inMemory(dbName)
+                    .url(url.removePrefix("jdbc:h2:"))
+                    .username(userName)
+                    .password(password)
+                    .build())
+        } else {
+             PostgresqlConnectionFactory(PostgresqlConnectionConfiguration.builder()
+                    .database("demo")
+                    .host("localhost")
+                    .username(userName)
+                    .password(password)
+                    .build()
 
-                //.inMemory(dbName)
-                .url(url.removePrefix("jdbc:h2:"))
-                .username(userName)
-                .password(password)
-                .build())
+            )
+        }
     }
 
     @Bean
@@ -59,7 +71,12 @@ class DatastoreConfig : AbstractR2dbcConfiguration() {
         val initializer = ConnectionFactoryInitializer()
         initializer.setConnectionFactory(connectionFactory)
         val populator = CompositeDatabasePopulator()
-        populator.addPopulators(ResourceDatabasePopulator(ClassPathResource("schema.sql")))
+        val schemaSql = when(connectionFactory) {
+            is PostgresqlConnectionFactory -> "postgres-schema.sql"
+            is H2ConnectionFactory -> "h2-schema.sql"
+            else -> throw IllegalArgumentException("no schema.sql for connection factory ${connectionFactory::class.java}")
+        }
+        populator.addPopulators(ResourceDatabasePopulator(ClassPathResource(schemaSql)))
         populator.addPopulators(ResourceDatabasePopulator(ClassPathResource("data.sql")))
         initializer.setDatabasePopulator(populator)
         return initializer
@@ -79,7 +96,6 @@ class MdcWebFilter : WebFilter {
                webFilterChain: WebFilterChain): Mono<Void> {
         val reqId = UUID.randomUUID().toString().replace("-", "").take(10)
         MDC.put(MDC_REQUEST_ID, reqId)
-        //println("set: " + MDC.get(MDC_REQUEST_ID))
         return webFilterChain.filter(serverWebExchange).subscriberContext{it.put(MDC_REQUEST_ID, reqId)}
     }
     companion object {

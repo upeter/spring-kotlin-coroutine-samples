@@ -7,9 +7,6 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.awaitBody
-import org.up.blocking.repository.BlockingAvatarService
-import org.up.blocking.repository.BlockingEnrollmentService
 import org.up.coroutines.model.AvatarDto
 import org.up.coroutines.model.User
 import reactor.core.publisher.Flux

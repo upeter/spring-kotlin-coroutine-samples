@@ -6,24 +6,20 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.reactive.ContextInjector
-import kotlinx.coroutines.reactive.awaitFirst
-import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.lang.Thread.sleep
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.system.measureTimeMillis
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
-import kotlin.coroutines.CoroutineContext
 
 
 data class Product(val id: Int, val name: String)
@@ -140,6 +136,8 @@ suspend fun <T> CompletableFuture<T>.await2(): T = suspendCoroutine { cont ->
         }
     }
 }
+
+//var combinedDataCompletionStage: CompletionStage<Combined> = aCompletionStage.thenCompose { a -> bCompletionStage.thenCompose { b -> cCompletionStage.thenCompose { c -> dCompletionStage.thenApply { d -> combine(a, b, c, d) } } } }
 
 
 suspend fun <T> Mono<T>.await(): T = suspendCoroutine { cont ->
@@ -289,7 +287,7 @@ fun coRoutineSequentalExample() {
     }
 }
 
-suspend fun sendReceive(id: Int = 0,  channel:Channel<String>):Unit = coroutineScope{
+suspend fun sendReceive(id: Int = 0, channel: Channel<String>):Unit = coroutineScope{
     val msg = "${this.coroutineContext[CoroutineName.Key]} send msg ${id+1}"
     channel.send(msg)
     println(msg)
@@ -299,7 +297,7 @@ suspend fun sendReceive(id: Int = 0,  channel:Channel<String>):Unit = coroutineS
     sendReceive(id + 1, channel)
 }
 
-suspend fun send(channel:Channel<String>, msg:String) = coroutineScope{
+suspend fun send(channel: Channel<String>, msg: String) = coroutineScope{
     val msg = "${Thread.currentThread().name} $msg"
     channel.send(msg)
     println(msg)
@@ -307,7 +305,7 @@ suspend fun send(channel:Channel<String>, msg:String) = coroutineScope{
 }
 
 
-suspend fun receive(channel:Channel<String>) = coroutineScope{
+suspend fun receive(channel: Channel<String>) = coroutineScope{
     val received = channel.receive()
     println("${Thread.currentThread().name} received=[$received]")
 }

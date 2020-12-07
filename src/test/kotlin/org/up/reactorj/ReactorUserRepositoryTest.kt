@@ -1,4 +1,4 @@
-package org.up.reactor
+package org.up.reactorj
 
 
 import org.junit.jupiter.api.Test
@@ -8,7 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.Transactional
 import org.up.coroutines.model.User
-import org.up.reactor.repository.ReactorUserRepository
+import org.up.reactorj.repository.ReactorUserJRepository
 import reactor.test.StepVerifier
 import io.kotlintest.shouldBe
 
@@ -16,7 +16,7 @@ import io.kotlintest.shouldBe
 @Transactional
 @ExtendWith(SpringExtension::class)
 class ReactorUserRepositoryTest @Autowired constructor(
-        val reactorUserRepository: ReactorUserRepository
+        val reactorUserRepository: ReactorUserJRepository
 ) {
 
     @Test
