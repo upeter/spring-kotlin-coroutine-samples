@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
 @EnableScheduling
-@EnableR2dbcRepositories(value = arrayOf("org.up.coroutines", "org.up.reactor"))
+@EnableR2dbcRepositories(value = arrayOf("org.up.coroutines", "org.up.reactor", "org.up.reactorj"))
 @EnableJpaRepositories("org.up.blocking")
 class SpringApplication
 
