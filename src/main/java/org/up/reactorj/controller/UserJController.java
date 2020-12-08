@@ -35,10 +35,10 @@ public class UserJController {
     @GetMapping("/reactorj/{user-id}/sync-avatar")
     @ResponseBody
     @Transactional
-    public Flux<User> syncAvatar(@PathVariable("user-id") Long id, @RequestParam(required = false) Long delay) {
+    public Flux<User> syncAvatar(@PathVariable("user-id") Long id) {
         return reactorUserDao.findById(id)
                 .flatMap(user ->
-                        reactorAvatarService.randomAvatar(delay)
+                        reactorAvatarService.randomAvatar()
                                 .flatMap(avatar ->
                                         reactorUserDao.save(UserBuilder
                                                 .from(user)

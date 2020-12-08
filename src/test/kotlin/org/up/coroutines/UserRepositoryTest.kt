@@ -1,6 +1,7 @@
 package org.up.coroutines
 
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -23,6 +24,7 @@ class UserRepositoryTest @Autowired constructor(
     @Test
     fun `should insert new user and find it by Id`() = runBlocking{
         val newUser = userRepository.save(User(userName = "Joe", email = "joe@home.nl"))
+        newUser.id shouldNotBe null
         val foundUser = userRepository.findById(newUser.id!!)
         foundUser shouldBe newUser
 

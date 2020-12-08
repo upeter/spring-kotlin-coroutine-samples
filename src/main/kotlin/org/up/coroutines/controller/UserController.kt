@@ -48,16 +48,14 @@ class UserController(
     suspend fun userByName(@RequestParam("userName") userName: String): User? =
         userRepository.findByUserName(userName)
 
-
     @GetMapping("/users/{user-id}/sync-avatar")
     @ResponseBody
     @Transactional
-    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0, @RequestParam(required = false) delay:Long? = null): User =
+    suspend fun syncAvatar(@PathVariable("user-id") id: Long = 0): User =
             userRepository.findById(id)?.let {
-                val avatar = avatarService.randomAvatar(delay)
+                val avatar = avatarService.randomAvatar()
                 userRepository.save(it.copy(avatarUrl = avatar.url))
             } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")
-
 
     @GetMapping("/infinite")
     fun infiniteFlow(): Flow<String>  = flow {
