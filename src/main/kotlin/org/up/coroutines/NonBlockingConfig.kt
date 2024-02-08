@@ -1,8 +1,10 @@
-package org.up.coroutines.config
+package org.up.coroutines
 
 import io.r2dbc.h2.H2ConnectionConfiguration
 import io.r2dbc.h2.H2ConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
 import org.reactivestreams.Subscription
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Value
@@ -10,9 +12,12 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ClassPathResource
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration
-import org.springframework.data.r2dbc.connectionfactory.init.CompositeDatabasePopulator
-import org.springframework.data.r2dbc.connectionfactory.init.ConnectionFactoryInitializer
-import org.springframework.data.r2dbc.connectionfactory.init.ResourceDatabasePopulator
+import org.springframework.r2dbc.connection.init.CompositeDatabasePopulator
+import org.springframework.r2dbc.connection.init.ConnectionFactoryInitializer
+import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
+// import org.springframework.data.r2dbc.connectionfactory.init.CompositeDatabasePopulator
+// import org.springframework.data.r2dbc.connectionfactory.init.ConnectionFactoryInitializer
+// import org.springframework.data.r2dbc.connectionfactory.init.ResourceDatabasePopulator
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -27,9 +32,6 @@ import reactor.core.publisher.Operators
 import reactor.util.context.Context
 import java.util.*
 import java.util.stream.Collectors
-import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
-
 
 @Configuration
 class DatastoreConfig : AbstractR2dbcConfiguration() {
@@ -45,13 +47,14 @@ class DatastoreConfig : AbstractR2dbcConfiguration() {
     @Bean
     override fun connectionFactory(): ConnectionFactory {
         println("init connectionFactory")
-        return H2ConnectionFactory(H2ConnectionConfiguration.builder()
-
-                //.inMemory(dbName)
+        return H2ConnectionFactory(
+            H2ConnectionConfiguration.builder()
+                // .inMemory(dbName)
                 .url(url.removePrefix("jdbc:h2:"))
                 .username(userName)
                 .password(password)
-                .build())
+                .build(),
+        )
     }
 
     @Bean
@@ -64,33 +67,31 @@ class DatastoreConfig : AbstractR2dbcConfiguration() {
         initializer.setDatabasePopulator(populator)
         return initializer
     }
-
 }
+
 @Configuration
 @EnableWebFlux
-class WebFluxConfig : WebFluxConfigurer {
-
-}
-
+class WebFluxConfig : WebFluxConfigurer
 
 @Component
 class MdcWebFilter : WebFilter {
-    override fun filter(serverWebExchange: ServerWebExchange,
-               webFilterChain: WebFilterChain): Mono<Void> {
+    override fun filter(
+        serverWebExchange: ServerWebExchange,
+        webFilterChain: WebFilterChain,
+    ): Mono<Void> {
         val reqId = UUID.randomUUID().toString().replace("-", "").take(10)
         MDC.put(MDC_REQUEST_ID, reqId)
-        //println("set: " + MDC.get(MDC_REQUEST_ID))
-        return webFilterChain.filter(serverWebExchange).subscriberContext{it.put(MDC_REQUEST_ID, reqId)}
+        // println("set: " + MDC.get(MDC_REQUEST_ID))
+        return webFilterChain.filter(serverWebExchange).contextWrite { it.put(MDC_REQUEST_ID, reqId) }
     }
+
     companion object {
         const val MDC_REQUEST_ID = "req-id"
     }
 }
 
-
 @Configuration
 class MdcContextLifterConfiguration {
-
     companion object {
         val MDC_CONTEXT_REACTOR_KEY: String = MdcContextLifterConfiguration::class.java.name
     }
@@ -104,14 +105,12 @@ class MdcContextLifterConfiguration {
     fun cleanupHook() {
         Hooks.resetOnEachOperator(MDC_CONTEXT_REACTOR_KEY)
     }
-
 }
 
 /**
  * Helper that copies the state of Reactor [Context] to MDC on the #onNext function.
  */
 class MdcContextLifter<T>(private val coreSubscriber: CoreSubscriber<T>) : CoreSubscriber<T> {
-
     override fun onNext(t: T) {
         coreSubscriber.currentContext().copyToMdc()
         coreSubscriber.onNext(t)
@@ -141,7 +140,8 @@ class MdcContextLifter<T>(private val coreSubscriber: CoreSubscriber<T>) : CoreS
  */
 private fun Context.copyToMdc() {
     if (!this.isEmpty) {
-        val map: Map<String, String> = this.stream()
+        val map: Map<String, String> =
+            this.stream()
                 .collect(Collectors.toMap({ e -> e.key.toString() }, { e -> e.value.toString() }))
         MDC.setContextMap(map)
     } else {
@@ -149,11 +149,8 @@ private fun Context.copyToMdc() {
     }
 }
 
-
-
 @Configuration
 class WebClientConfiguration {
-
     @Bean
     fun webClient() = WebClient.builder().baseUrl("http://localhost:8080").build()
 }

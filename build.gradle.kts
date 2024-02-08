@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.io.spring.dependency.management)
     alias(libs.plugins.org.jetbrains.kotlinx.kover)
     alias(libs.plugins.com.linecorp.build.recipe.plugin)
-    alias(libs.plugins.org.jlleitschuh.gradle.ktlint)
+//    alias(libs.plugins.org.jlleitschuh.gradle.ktlint)
 }
 
 repositories {
@@ -56,4 +56,3 @@ kotlin {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
-
