@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.springframework.data.r2dbc.core.DatabaseClient
+import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import org.up.coroutines.model.Product
 import reactor.core.publisher.Flux
@@ -14,7 +15,7 @@ import reactor.core.publisher.Mono
 class ProductRepository(private val client: DatabaseClient) {
 
     fun getProductById(id: Int): Mono<Product> {
-        return client.execute("SELECT * FROM product WHERE id = $1")
+        return client.sql("SELECT * FROM product WHERE id = $1")
           .bind(0, id)
           .`as`(Product::class.java)
           .fetch()

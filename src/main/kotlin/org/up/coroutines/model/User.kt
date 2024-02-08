@@ -3,10 +3,7 @@ package org.up.coroutines.model
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
-import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
-import java.net.URL
-import java.util.*
 
 
 @Table("users")
