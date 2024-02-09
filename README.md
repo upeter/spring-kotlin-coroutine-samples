@@ -42,7 +42,7 @@ Key ingredients for coroutines
 
 - Insert User
 ```
-curl -X POST -H "Content-Type: application/json" -d '{"id":null,"username":"JackRabbit","email":"Jack@Rabbit.com","avatarUrl":null}'  http://localhost:8080/users/
+curl -X POST -H "Content-Type: application/json" -d '{"id":null,"userName":"JackRabbit","email":"Jack@Rabbit.com","avatarUrl":null}'  http://localhost:8080/users/
 ```
 
 - Sync avatar

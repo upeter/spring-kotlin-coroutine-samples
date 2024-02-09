@@ -1,5 +1,3 @@
-create sequence if NOT EXISTS hibernate_sequence start 1 increment 1 cache 20;
-
 CREATE TABLE IF NOT EXISTS product (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR NOT NULL,

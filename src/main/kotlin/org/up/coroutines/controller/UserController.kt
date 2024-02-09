@@ -70,7 +70,8 @@ class UserController(
 
     @GetMapping("/fibanocci/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun fibanocciFlow(): Flow<Long> {
-        val fibonacci: Sequence<Long> = generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map { it.first }
+        val fibonacci: Sequence<Long> =
+            generateSequence(Pair(0L, 1L), { Pair(it.second, it.first + it.second) }).map { it.first }
         return flow {
             fibonacci.forEach { next ->
                 if (next >= 0L) {

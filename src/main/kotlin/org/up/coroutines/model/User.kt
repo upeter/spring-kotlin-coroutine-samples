@@ -15,7 +15,7 @@ data class User(
 )
 
 data class AvatarDto
-    @JsonCreator
-    constructor(
-        @JsonProperty("url") val url: String,
-    )
+@JsonCreator
+constructor(
+    @JsonProperty("url") val url: String,
+)

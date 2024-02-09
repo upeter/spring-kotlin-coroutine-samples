@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 @RestController
-open class ReactorUserController(
+class ReactorUserController(
     private val reactorUserDao: ReactorUserRepository,
     private val reactorAvatarService: ReactorAvatarService,
     private val reactorEnrollmentService: ReactorEnrollmentService,
@@ -58,7 +58,8 @@ open class ReactorUserController(
                     .flatMap { avatar ->
                         reactorUserDao.save(user.copy(avatarUrl = avatar.url))
                     }
-            }.switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")))
+            }
+            .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND, "Unable to find user with id=$id")))
             .flux()
     }
 }
