@@ -1,4 +1,4 @@
-FROM node:7
+FROM node:latest
 WORKDIR /app
 RUN apt-get update -yq \
     && apt-get install tcpdump -yq 

@@ -1,0 +1,47 @@
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          r2dbc: WARN
+        web:
+          reactive:
+            function:
+              client:
+                ExchangeFunctions: WARN
+remote:
+  service:
+    delay:
+      ms: 300
+    url: http://localhost:8081
+spring:
+  datasource:
+    driverClassName: org.h2.Driver
+    hikari:
+      maximumPoolSize: 100
+      jdbc-url: ${spring.datasource.url}
+    password: ''
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;INIT=RUNSCRIPT FROM 'classpath:./schema.sql'
+    username: sa
+  h2:
+    console:
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    generate-ddl: false
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+#  mvc:
+#    log-request-details: true
+  webflux:
+    problem-details:
+      enabled: true
+#  jackson:
+#    property-naming-strategy: SNAKE_CASE
+  sql:
+    init:
+      mode: always
+  threads:
+    virtual:
+      enabled: true

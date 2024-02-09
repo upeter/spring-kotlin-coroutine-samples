@@ -1,13 +1,9 @@
 package org.up.utils
 
 import org.slf4j.MDC
-import org.up.coroutines.config.MdcWebFilter
 import reactor.util.function.Tuple2
 import java.util.*
 import java.util.concurrent.CompletableFuture
-
-
-
 
 fun <T : Any> Optional<T>.toNullable(): T? {
     return if (this.isPresent) {
@@ -17,11 +13,12 @@ fun <T : Any> Optional<T>.toNullable(): T? {
     }
 }
 
-//======Reactor Utils ======
-operator fun <A, B>Tuple2<A, B>.component1() = this.t1
-operator fun <A, B>Tuple2<A, B>.component2() = this.t2
+// ======Reactor Utils ======
+operator fun <A, B> Tuple2<A, B>.component1() = this.t1
 
-//======CompletableFuture Utils =======
+operator fun <A, B> Tuple2<A, B>.component2() = this.t2
+
+// ======CompletableFuture Utils =======
 fun <U> supplyAsync(supplier: () -> U): CompletableFuture<U> {
     return CompletableFuture.supplyAsync(SupplierMDC(supplier))
 }

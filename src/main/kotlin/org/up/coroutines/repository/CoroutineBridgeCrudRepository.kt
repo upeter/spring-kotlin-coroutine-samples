@@ -1,24 +1,16 @@
 package org.up.coroutines.repository
 
-
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
-
-
-//does not work yet as to 2.3.0.RC1
-//@Repository
-//interface UserRepository_ : CoroutineCrudRepository<User, Long> {
+// does not work yet as to 2.3.0.RC1
+// @Repository
+// interface UserRepository_ : CoroutineCrudRepository<User, Long> {
 //
 //    @Query("SELECT * FROM users WHERE id = ?0")
 //    suspend fun findOne(id: Long): User?
 //
 //    //fun findByFirstname(firstname: String): Flow<User>
-//}
+// }
 
-//abstract class CoroutineCrudRepository<R:ReactiveCrudRepository<T, ID>, T:Any, ID>(val underlying:R) {
+// abstract class CoroutineCrudRepository<R:ReactiveCrudRepository<T, ID>, T:Any, ID>(val underlying:R) {
 //
 //    suspend fun <S : T?> save(entity: S): S = underlying.save(entity).awaitFirst()
 //
@@ -40,4 +32,4 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository
 //
 //    suspend fun deleteAll() = underlying.deleteAll().awaitFirst()
 //
-//}
+// }

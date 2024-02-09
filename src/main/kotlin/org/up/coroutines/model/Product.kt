@@ -5,10 +5,10 @@ import org.springframework.data.relational.core.mapping.Table
 
 @Table
 data class Product(
-        @Id
-        var id: Int? = null,
-        var name: String = "",
-        var price: Int = 0
+    @Id
+    var id: Int? = null,
+    var name: String = "",
+    var price: Int = 0,
 )
 
 data class ProductStockView(val product: Product, var stockQuantity: Int) {
