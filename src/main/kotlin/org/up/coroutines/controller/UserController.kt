@@ -14,6 +14,8 @@ import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
+import org.up.blocking.repository.BlockingAvatarService
+import org.up.blocking.repository.BlockingEnrollmentService
 import org.up.coroutines.model.User
 import org.up.coroutines.repository.AvatarService
 import org.up.coroutines.repository.EnrollmentService
@@ -24,6 +26,8 @@ class UserController(
     private val userRepository: UserRepository,
     private val avatarService: AvatarService,
     private val enrollmentService: EnrollmentService,
+    private val blockingEnrollmentService: BlockingEnrollmentService,
+    private val blockingAvatarService: BlockingAvatarService,
 ) {
     @GetMapping("/users")
     @ResponseBody
@@ -51,6 +55,33 @@ class UserController(
         withContext(MDCContext()) {
             val emailVerified = async { enrollmentService.verifyEmail(user.email, delay) }
             val avatarUrl = async { user.avatarUrl ?: avatarService.randomAvatar(delay).url }
+            userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
+                channel.send(user.email)
+            }
+        }
+
+    /**
+     * This method is a blocking version of the storeUser method.
+     * Because it uses the blockingEnrollmentService and blockingAvatarService.
+     * Which use restTemplate underlining, and it's blocking.
+     * But virtual threads are support restTemplate as well.
+     * So if enable virtual threads, it will be non-blocking.
+     * Here the response time > 400ms, because of the blockingEnrollmentService and blockingAvatarService.
+     * But we can use withContext(Dispatchers.IO) to make it non-blocking.(It's will exhausted the thread pool, if the thread pool size is small.)
+     *  Here the response time > 200ms
+     * And we can use Dispatchers.VT instead of Dispatchers.IO, to make it non-blocking.
+     *  Here the response time > 200ms
+     */
+    @PostMapping("/users/with-blocking")
+    @ResponseBody
+    @Transactional
+    suspend fun storeUserWithBlocking(
+        @RequestBody user: User,
+        @RequestParam(required = false) delay: Long? = null,
+    ): User? =
+        withContext(MDCContext()) {
+            val emailVerified = async { blockingEnrollmentService.verifyEmail(user.email, delay) }
+            val avatarUrl = async { user.avatarUrl ?: blockingAvatarService.randomAvatar(delay).url }
             userRepository.save(user.copy(avatarUrl = avatarUrl.await(), emailVerified = emailVerified.await())).also {
                 channel.send(user.email)
             }

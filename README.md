@@ -72,3 +72,13 @@ gob  -c 100 -n 500 -k http://localhost:8080/blocking/users/3/sync-avatar
 
 https://stackoverflow.com/questions/35628764/completablefuture-vs-spring-transactions
 
+
+# Coroutines with blocking calls. restTemplate
+## case 1 - blocking, spring.threads.virtual.enabled:false
+```shell
+echo -n '{"id":null,"userName":"JackRabbit","email":"Jack@Rabbit.com","avatarUrl":null}' | http POST http://localhost:8080/users/with-blocking\?delay\=200 --meta
+Elapsed time: 0.443338084s
+```
+
+## case 2 - blocking, spring.threads.virtual.enabled:true
+```shell
